@@ -1,4 +1,4 @@
-#  Open Telemtry setup
+#  Open Telemetry setup
 
  #### Running to code
 
