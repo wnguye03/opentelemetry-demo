@@ -1,67 +1,79 @@
+# we can have many recievers (list)
 receivers:
   otlp:
-    protocols:
+  # defining porotocl we are listing to 
+    protocols: 
+    # http protocl 
       http:
+        # listening to port 4318 (defaut port for OTEL collector)
+        # this endpoint has to correspond to the ports lsited in the docker file
         endpoint: 0.0.0.0:4319
-      grpc:
+      grpc: 
         endpoint: 0.0.0.0:4320
 
-processors:
+# processors processes your telemtry before sending it off
+processors: 
+  # processor 1: batch - doing it in batches every 1 second 
   batch:
     timeout: 1s
+  # processor 2: resource - alter incoming data by adding attribute 
   resource:
-    attributes:
+    attributes: 
       - key: test.key
-        value: "gateway"
+        value: "test-value"
         action: insert
-  tail_sampling:
-    decision_wait: 2s
-    num_traces: 100
-    expected_new_traces_per_sec: 1
-    policies:
-      [
-          # {
-          #   name: test-policy-1,
-          #   type: status_code,
-          #   status_code: {status_codes: [ERROR]}
-          # },
-          # {
-          #   name: test-policy-2,
-          #   type: latency,
-          #   latency: {threshold_ms: 1500}
-          # },
-      ]
+
+# exports the OTEL data to vendors or your backend of choice 
 exporters:
+  # indicate metrics to be exported to Promoethus
   prometheus:
+    # this endpoint has to correspond to the ports lsited in the docker file
     endpoint: "0.0.0.0:8889"
+    # configuration on data
     send_timestamps: true
     namespace: promexample
     const_labels:
-      label1: value1
+      label1: value
 
+  # this is for logging everything to the console
   logging:
     loglevel: info
 
+  # tracing exporter 
   jaeger:
+    # this endpoint has to correspond to the ports lsited in the docker file
     endpoint: jaeger:14250
-    tls:
-      insecure: true
+    # configuration on data
+    # no encryption
+    insecure: true
 
-extensions:
+# additonal plugins or extensions for the collector
+extensions: 
+  # checking everyhting works as expected
   health_check:
+  # gives us access to performance data
   pprof:
     endpoint: :1888
-  zpages:
+  # debugging data
+  zpages: 
     endpoint: :55679
 
+# define how all the tools and processors in the collector work together
 service:
   extensions: [pprof, zpages, health_check]
+  # define steps for incoming traces and metric etc. to be handled
   pipelines:
+    # trace specifc
     traces:
+      # where it is being recieved
       receivers: [otlp]
-      processors: [tail_sampling, batch, resource]
+      # how it is being processed
+      processors: [batch, resource]
+      # where it is being sent to
       exporters: [logging, jaeger]
+    # metrics specifc
     metrics:
-      receivers: [otlp]
+      recievers: [otlp]
+      # how it is being processed
       processors: [batch]
       exporters: [logging, prometheus]

@@ -1,29 +1,35 @@
+# very similar set up to Collector gateway
+# defining how to recieve the data 
 receivers:
   otlp:
     protocols:
       http:
         endpoint: 0.0.0.0:4318
 
+# defining where to send the data
 exporters:
   otlp:
     endpoint: "collector-gateway:4320"
     insecure: true
   logging:
-    loglevel: info
+    loglevel: error
 
-
+# additional processors for incoming data
 processors:
   batch:
     timeout: 1s
   resource:
+  # test attribute
     attributes:
       - key: component.name1
         value: "agent"
         action: insert
 
+#  additional plugin 
 extensions:
   health_check:
 
+# defining the pipeline
 service:
   extensions: [health_check]
   pipelines:
