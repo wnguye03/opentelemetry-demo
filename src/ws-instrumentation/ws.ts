@@ -38,24 +38,30 @@ export default class WsInstrumentation extends InstrumentationBase<any> {
 
                             console.log(`on was register`, { ev, originalListener });
                             
-                            // 
+                            // if event type is message
                             if(ev === "message"){
+                                //this is our function used in place args is the payload
                                 const wrapMessage = function (args){
+                                    //the ws payload
                                     const payload = JSON.parse(args?.toString());
+                                    //extract the previous span to allow for propogation of context
                                     const propagatedContext = api.propagation.extract(api.ROOT_CONTEXT, payload);
+                                    //start span up again and modify the span as needed 
                                     const wsSpan = self.tracer.startSpan('got ws message', {
                                         attributes: {
                                             'payload': args?.toString()
                                         }
                                     }, propagatedContext)
+                                    //invoke original function
                                     originalListener.apply(this, args)
+                                    //end the span
                                     wsSpan.end();
                                 }
-                                // return wrapMessage
+                                // return our function to be used in place of the original function
                                 return original.apply(this, [ev, wrapMessage]);
 
                             }
-
+                            //otherwise just use the original ws function if ev is not equal to message
                             return original.apply(this,[ev, originalListener]);
 
 

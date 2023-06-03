@@ -41,13 +41,13 @@ services:
       - 9090:9090
 
     # same structure as above
-    redis:
+  redis:
       image: redis
       ports:
         - 6379:6379
 
     # same structure as above
-    jaeger:
+  jaeger:
       image: jaegertracing/all-in-one
       # Can include environment variable to aid in the functioning of the containerized application
       environment:
@@ -74,7 +74,7 @@ services:
     
     # same structure as above
     # Gave our our service a name caled colelctor agent
-      collector-agent:
+  collector-agent:
         image: otel/opentelemetry-collector:0.29.0
         # mapping the command path to a local configuration
         volumes: 
@@ -89,7 +89,7 @@ services:
           - "4318:4318"        # OTLP HTTP receiver
           # - "55670:55679" # zpages extension
 
-      collector-gateway:
+  collector-gateway:
         image: otel/opentelemetry-collector-contrib:0.29.0
         # mapping the command path to a local configuration
         volumes: 

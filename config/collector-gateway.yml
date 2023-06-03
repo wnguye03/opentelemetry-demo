@@ -25,6 +25,12 @@ processors:
 
 # exports the OTEL data to vendors or your backend of choice 
 exporters:
+
+  otelphttp:
+    endpoint: "http://localhost:3000/telemetry"
+    headers: 
+      Content-Type: "application/json"
+    insecure: true
   # indicate metrics to be exported to Promoethus
   prometheus:
     # this endpoint has to correspond to the ports lsited in the docker file
@@ -70,10 +76,13 @@ service:
       # how it is being processed
       processors: [batch, resource]
       # where it is being sent to
-      exporters: [logging, jaeger]
+      exporters: [logging, jaeger, otelphttp]
     # metrics specifc
     metrics:
       recievers: [otlp]
       # how it is being processed
       processors: [batch]
-      exporters: [logging, prometheus]
+      exporters: [logging, prometheus, otelphttp]
+
+
+

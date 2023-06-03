@@ -14,6 +14,8 @@ import { IORedisInstrumentation } from '@opentelemetry/instrumentation-ioredis'
 import { serviceSyncDetector } from 'opentelemetry-resource-detector-service';
 import { CollectorTraceExporter, CollectorMetricExporter, } from '@opentelemetry/exporter-collector';
 import WsInstrumentation from './ws-instrumentation/ws';
+const { OTLPTraceExporter } = require('@opentelemetry/exporter-trace-otlp-http');
+
 
 
 const init = function (serviceName: string, metricPort: number) {
@@ -29,6 +31,7 @@ const init = function (serviceName: string, metricPort: number) {
 
     // Define traces
     const traceExporter = new JaegerExporter({ endpoint: 'http://localhost:14268/api/traces'});
+    const traceExporter2 = new OTLPTraceExporter({ url: 'http://localhost:3001/'})
     const provider = new NodeTracerProvider({
         resource: new Resource({
             [SemanticResourceAttributes.SERVICE_NAME]: serviceName
@@ -37,28 +40,57 @@ const init = function (serviceName: string, metricPort: number) {
             root: new TraceIdRatioBasedSampler(1)
         })
     });
+    // const provider2 = new NodeTracerProvider({
+    //     resource: new Resource({
+    //         [SemanticResourceAttributes.SERVICE_NAME]: serviceName,
+    //         'http-reqBodySize': HttpInstrumentation.respon
+    //     })
+    // })
+
+    // const provider2 = new NodeTracerProvider({
+    //     resource: new Resource({
+    //         [SemanticResourceAttributes.SERVICE_NAME]: serviceName
+    //     }),
+    //     sampler:new ParentBasedSampler({
+    //         root: new TraceIdRatioBasedSampler(1)
+    //     })
+    // });
     // const traceExporter = new CollectorTraceExporter({
     //     url: 'http://localhost:4318/v1/trace'
     // })
-    provider.addSpanProcessor(new SimpleSpanProcessor(traceExporter));
+    provider.addSpanProcessor(new BatchSpanProcessor(traceExporter));
+    provider.addSpanProcessor(new SimpleSpanProcessor(traceExporter2));
     provider.register();
     registerInstrumentations({
         instrumentations: [
             new ExpressInstrumentation({
                 requestHook: (span, reqInfo) => {
-                    span.setAttribute('request-headers',JSON.stringify(reqInfo.req.headers))
+                    span.setAttribute('request-headers', JSON.stringify(reqInfo.req.headers))
+                    // span.setAttributes('request', )
+                    // span.setAttribute('request', JSON.stringify(reqInfo.request))
+                    // span.setAttribute('response', JSON.stringify(reqInfo.res))
+                    // span.setAttribute('newReqAttribute', http.request.body.size)
+                    
                 }
             }),
-            new HttpInstrumentation(),
+            new HttpInstrumentation({
+                requestHook: (span, request) => {
+                    // span.setAttribute("additional req info", JSON.stringify(request))
+                    // request.on('end', () => {
+                    //     span.setAttribute('request', JSON.stringify(request));
+                    // })
+                }
+            }),
             new IORedisInstrumentation(),
-             new WsInstrumentation()
+            new WsInstrumentation()
         ]
     });
     const tracer = provider.getTracer(serviceName);
+    // const tracer2 = provider2.getTracer(serviceName);
     return { meter, tracer };
 }
 
-// export default init;
+export default init;
 
 // import { MeterProvider } from '@opentelemetry/sdk-metrics-base';
 // import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';

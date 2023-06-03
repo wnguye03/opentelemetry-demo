@@ -1,5 +1,5 @@
 // importing tracer code
-import init from './tracer';
+import init from './tracer'
 // initalizing tracer and meter 
 const { meter, tracer } = init('items-service', 8081);
 
@@ -79,6 +79,9 @@ app.get('/pub', (request, response) => {
     redis.publish('my-channel', JSON.stringify(payload));
     response.sendStatus(200);
 })
+
+app.post('', (req, res) => {
+});
 
 app.listen(8080);
 console.log('items services is up and running on port 8080');
